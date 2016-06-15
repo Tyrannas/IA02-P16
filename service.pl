@@ -57,6 +57,7 @@ resetPions:- assert(khan(0,0)), retractall(sbireO(_,_)), retractall(sbireR(_,_))
 getAllPiecesR(Res):- findall([X,Y],sbireR(X,Y),L),kalistaR(W,Z),append(L,[[W,Z]],Res).
 getAllPiecesO(Res):- findall([X,Y],sbireO(X,Y),L),kalistaO(W,Z),append(L,[[W,Z]],Res).
 getAllPieces(Res):-getAllPiecesR(X), getAllPiecesO(Y), append(X,Y,Res).
+setKhan(Pos):-parse(Pos,X,Y), retractall(khan(X1,Y1)), assert(khan(X,Y)).
 
 parse(out,0,0).
 
@@ -148,3 +149,8 @@ afficheListe([T|Q]):-write(T), afficheListe(Q).
 
 dupListe([],[]).
 dupListe([T|Q],[T|Q1]):-dupListe(Q,Q1). 
+
+estTypeCase1(X,Y):-findTypeCase(X,Y,TYPE),TYPE =:= 1.
+estTypeCase2(X,Y):-findTypeCase(X,Y,TYPE),TYPE =:= 2.
+estTypeCase3(X,Y):-findTypeCase(X,Y,TYPE),TYPE =:= 3.
+

@@ -18,7 +18,7 @@ testIfOcuppied(Elem,false,[Elem]).
 testIfOcuppied(Elem,true,[]).
 /*Cas ou c'est le dernier mouvement*/
 /*Cas ou le joueur cherche à jouer son dernier coup, il peut donc manger un pion ennemi, on ne retire donc la case que si elle est occuppee par un allié*/
-retireSuccOccupe([],_,Res,Res,1):-write("Fin Iter"),nl.
+retireSuccOccupe([],_,Res,Res,1).
 retireSuccOccupe([T|Q],rouge,L2,Res,1):- getAllPiecesR(Pions),parse(T,X,Y),memberL([X,Y],Pions,Bool),
 									testIfOcuppied(T,Bool,Val),append(Val,L2,L3), 
 									retireSuccOccupe(Q,rouge,L3,Res,1).
@@ -41,13 +41,17 @@ getAllSucc(Case,N,Res):- getSucc(N,Case,ListePos), N1 is N-1, getAllSuccListe(Li
 
 %fonction de service de la précédente
 getAllSuccListe([],_,_,_).
-getAllSuccListe([Case|Q],N,Res,Parent):- getAllSucc(Case,N,Res1), testParent(Parent,Res1,Res2), write(Parent),write(Case),write(Res2),nl,getAllSuccListe(Q,N,Res3,Parent), append(Res2,Res3,Res). 
+getAllSuccListe([Case|Q],N,Res,Parent):- getAllSucc(Case,N,Res1), testParent(Parent,Res1,Res2),getAllSuccListe(Q,N,Res3,Parent), append(Res2,Res3,Res). 
 
 /*permet de tester que l'on est pas déjà passé par une case*/
 testParent(Parent,Enfants,Res):-member(Parent,Enfants),del(Parent,Enfants,Res).
 testParent(Parent,Enfants,Enfants).
 
 mouvementsPossiblesCase(Case,Res2):- parse(Case,X,Y), findTypeCase(X,Y,Type), getAllSucc(Case,Type,Res), dupListe(Res,Res1), delDoublons(Res1,Res2).
+
+%calcule tous les mouvements possibles pour une liste de pions*/
+calculeMouvements([],Acc,Res):-length(Acc,Res).
+calculeMouvements([[X , Y]|Q],Acc,Res):- parse(Case,X,Y),mouvementsPossiblesCase(Case,Res1), append(Acc,Res1,Res2), calculeMouvements(Q,Res2,Res).
 %% getAllSuccTest(Case,0).
 %% getAllSuccTest(Case,1,Res):- getAllSucc(1,Case,Res), assert(moves(Res)).
 %% getAllSuccTest(Case,2, Res):- getAllSucc(2,Case,ListePos), getAllSuccListe(ListePos,1,Res).
