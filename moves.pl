@@ -1,5 +1,4 @@
-:-consult("service").
-:- consult("init").
+
 
 succ(1,_,gauche,[]).
 succ(X,Y,gauche,Res):- X1 is X-1, parse(Res,X1,Y).
@@ -27,22 +26,31 @@ retireSuccOccupe([T|Q],rouge,L2,Res,1):- getAllPiecesR(Pions),parse(T,X,Y),membe
 retireSuccOccupe([T|Q],ocre,L2,Res,1):- getAllPiecesO(Pions),parse(T,X,Y),memberL([X,Y],Pions,Bool),
 									testIfOcuppied(T,Bool,Val),append(Val,L2,L3), 
 									retireSuccOccupe(Q,ocre,L3,Res,1).
-
+/*Cas ou le joueur est bloqué s'il tombe sur un pion ennemi*/
 retireSuccOccupe([],_,L2,L2,_).
 retireSuccOccupe([T|Q],Player,L2,Res,N):- getAllPieces(Pions),parse(T,X,Y),memberL([X,Y],Pions,Bool),
 									testIfOcuppied(T,Bool,Val), append(Val,L2,L3),
 									retireSuccOccupe(Q,Player,L3,Res,1).
 
-getAllSucc(N,Case,ListePos):-succValides(Case,Res),joueurCourant(Player),retireSuccOccupe(Res,Player,[],ListePos,N),write(Case),write(ListePos),nl.
+%retourne tous les successeurs directs d'une case.
+getSucc(N,Case,ListePos):-succValides(Case,Res),joueurCourant(Player),retireSuccOccupe(Res,Player,[],ListePos,N).
 
-getAllSuccRecur(Liste,0,Liste).
-getAllSuccRecur([Case|ListeCase],N,Res):-getAllSucc(N,Case,NewList), N1 is N-1, getAllSuccRecur(ListeCase,N,Res), getAllSuccRecur(NewList,N1,Res). 
+%retourne les successeurs sur N niveaux d'une case.
+getAllSucc(Case,1,Res):-getSucc(1,Case,Res).
+getAllSucc(Case,N,Res):- getSucc(N,Case,ListePos), N1 is N-1, getAllSuccListe(ListePos,N1,Res,Case).
 
-getAllSuccTest(Case,0).
-getAllSuccTest(Case,1,Res):- getAllSucc(1,Case,Res), assert(moves(Res)).
-getAllSuccTest(Case,2, Res):- getAllSucc(2,Case,ListePos), getAllSuccListe(ListePos,1,Res).
-getAllSuccTest(Case,3,Res):- getAllSucc(3,Case,ListePos), getAllSuccListe(ListePos,2,Res).
+%fonction de service de la précédente
+getAllSuccListe([],_,_,_).
+getAllSuccListe([Case|Q],N,Res,Parent):- getAllSucc(Case,N,Res1), testParent(Parent,Res1,Res2), write(Parent),write(Case),write(Res2),nl,getAllSuccListe(Q,N,Res3,Parent), append(Res2,Res3,Res). 
 
-getAllSuccListe([],_,_).
-getAllSuccListe([T|Q],N,Res):- getAllSuccTest(T,N,Res1), getAllSuccListe(Q,N,Res2), append(Res1,Res2,Res). 
+/*permet de tester que l'on est pas déjà passé par une case*/
+testParent(Parent,Enfants,Res):-member(Parent,Enfants),del(Parent,Enfants,Res).
+testParent(Parent,Enfants,Enfants).
+
+mouvementsPossiblesCase(Case,Res2):- parse(Case,X,Y), findTypeCase(X,Y,Type), getAllSucc(Case,Type,Res), dupListe(Res,Res1), delDoublons(Res1,Res2).
+%% getAllSuccTest(Case,0).
+%% getAllSuccTest(Case,1,Res):- getAllSucc(1,Case,Res), assert(moves(Res)).
+%% getAllSuccTest(Case,2, Res):- getAllSucc(2,Case,ListePos), getAllSuccListe(ListePos,1,Res).
+%% getAllSuccTest(Case,3,Res):- getAllSucc(3,Case,ListePos), getAllSuccListe(ListePos,2,Res).
+
 

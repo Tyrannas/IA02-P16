@@ -50,7 +50,7 @@ setPlateauHaut:-retractall(plateau(X)),assert(plateau([
 %joueurOcre
 :-dynamic jOcre/1.
 %moves
-:-dynamice moves/1.
+:-dynamic moves/1.
 
 
 resetPions:- assert(khan(0,0)), retractall(sbireO(_,_)), retractall(sbireR(_,_)), retractall(kalistaR(_,_)), retractall(kalistaO(_,_)).
@@ -130,3 +130,21 @@ accRev([],A,A).
 memberL(L1,[],false).
 memberL(L1,[L1|Q],true).
 memberL(L1,[T|Q],Bool):-memberL(L1,Q,Bool).
+
+initTest:-setPlateauGauche,assert(joueurCourant(rouge)), resetPions, placementOrdiRouge,placementOrdiOcre.
+
+del(X,[X|Tail],Tail).
+del(X,[Y|Tail],[Y|Tail1]):- del(X,Tail,Tail1).
+
+delDoublons([],[]).
+delDoublons([T|Q],[T|Q1]):-not(member(T,Q)),delDoublons(Q,Q1).
+delDoublons([T|Q],Q1):-member(T,Q),delDoublons(Q,Q1).
+
+delLast([_],[]).
+delLast([T|Q],[T|Q1]):-delLast(Q,Q1).
+
+afficheListe([]).
+afficheListe([T|Q]):-write(T), afficheListe(Q).
+
+dupListe([],[]).
+dupListe([T|Q],[T|Q1]):-dupListe(Q,Q1). 

@@ -3,6 +3,7 @@
 :- consult("init").
 :- consult("moves").
 
+
 pionsAPlacer(rouge):-nbPionsRouge(N), not(N =:= 0).
 pionsAPlacer(ocre):-nbPionsOcre(N), not(N =:= 0).
 nbPionsOcre(R):-findall(X, sbireO(X,_), L), length(L,N), N is 6-N.
