@@ -1,6 +1,4 @@
 %permet de savoir si un joueur a des pions mangés. 
-:-consult("service").
-:- consult("init").
 :- consult("moves").
 
 /*====FONCTION DE TOUR HUMAIN========*/
@@ -12,101 +10,63 @@
 /*On pose le Khan*/
 /*On passe au joueur suivant*/
 
-tourHumain:-joueurCourant(Player), write("au joueur "), write(Player), write(" de jouer"),nl,
-				khan(X,Y), parse(K,X,Y),
-				possibilitesJoueur(Pion,Player,K),
-				write('Ou voulez vous le jouer?(entrer 0 pour changer de piece a jouer.'),nl,
-				mouvementsPossiblesCase(Pion, ListePos),
-				write('Deplacements autorises: '), write(ListePos),nl,
-				read(Pos), nl,
-				checkMouvement(Pos,Pion,ListePos).
 
-checkMouvement(0,_,_):-tourHumain.
-checkMouvement(Pos,Pion,Liste):- member(Pos,Liste), joueurCourant(Player),parse(Pion,X,Y),movePiece(Pion,Pos,Player), setKhan(Pion), write("on termine le tour"), changementJoueur, endTurn. 
-checkMouvement(Pos,Pion,Liste):- not(member(Pos,L)), ('Entrez une position autorisee merci'), nl, tourHumain.
+tourHumain:- write("--------Joueur: "), joueurCourant(Player), write(Player), write("---------"),nl,
+			choixPiece(Pion),choixMove(Pion,Case), finTour(Pion,Case).
 
-%%permet de bouger une piece, on verifie a chaque fois avant de bouger si l'on va manger une piece adverse (conflit si l'on check apres)
-%c% cas ou l'on bouge la kalista rouge
-movePiece(Pion,Pos,rouge):- parse(Pion,X,Y), kalistaR(X,Y), checkMange(Pos,rouge), bougeKalista(Pos,rouge), write("test"),!.
-%%cas ou l'on bouge un sbire rouge
-movePiece(Pion,Pos,rouge):- parse(Pion,X,Y), sbireR(X,Y), checkMange(Pos,rouge), bougeSbire(Pion,Pos,rouge), write("test2"),!.
-%%cas ou l'on bouge  la kalista ocre
-movePiece(Pion,Pos,ocre):- parse(Pion,X,Y), kalistaO(X,Y), checkMange(Pos,ocre), bougeKalista(Pos,ocre),!.
-%%cas ou l'on bouge un pion ocre
-movePiece(Pion,Pos,ocre):- parse(Pion,X,Y), sbireO(X,Y), checkMange(Pos,ocre),bougeSbire(Pion,Pos,ocre), !.
+choixPiece(Pion):- getPossibles(Res,Bool),proposeCoups(Res,Bool,Pion1),checkPion(Pion1,Res,Pion). 
 
-%après un déplacement on test si on a mangé une pièce
-%premier cas: la case ou l'on se déplace est libre
-checkMange(Pos,_):- parse(Pos,X,Y),estLibre(X,Y),!.
-%cas ou rouge se déplace et mange la kalista ocre
-checkMange(Pos,rouge):-parse(Pos,X,Y), not(estLibre(X,Y)), kalistaO(X,Y),assert(winner(rouge)),!.
-%cas ou ocre se déplace et mange la kalista ocre
-checkMange(Pos,ocre):-parse(Pos,X,Y), not(estLibre(X,Y)), kalistaR(X,Y),assert(winner(ocre)),!.
-%cas ou rouge se déplace et mange un pion ocre
-checkMange(Pos,rouge):-parse(Pos,X,Y), not(estLibre(X,Y)), sbireO(X,Y),retract(sbireO(X,Y)),!.
-%cas ou ocre se déplace et mange un pion rouge
-checkMange(Pos,ocre):-parse(Pos,X,Y), not(estLibre(X,Y)), sbireR(X,Y),retract(sbireR(X,Y)),!.
+choixMove(Pion,Case):- mouvementsPossiblesCase(Pion,Positions), proposeMoves(Positions, Case).
 
-endTurn:-joueurCourant(X), checkTypeJoueur(X).
-checkTypeJoueur(rouge):-jRouge(Type), tourSuivant(Type).
-checkTypeJoueur(ocre):-jOcre(Type), tourSuivant(Type).
 
+proposeCoups(Pions,true,Pion):-write("Vous pouvez jouez une piece parmis les suivantes ou poser un pion (entrer 1)."),nl,
+							write(Pions),nl,read(Pion).
+proposeCoups(Pions,_,Pion):-write("Vous pouvez jouez une piece parmi les suivantes"),nl,
+							write(Pions),nl,read(Pion).
+
+proposeMoves(Positions,Case):-write("Ou voulez vous jouer la piece?"), nl, write(Positions), read(Case), nl,member(Case,Positions).
+proposeMoves(_,_):-write("-------------Move invalide-----------"), nl, tourHumain.
+
+finTour(Pion,Case):- checkMange(Case), bougePiece(Pion,Case), setKhan(Case),endTurn.
+finTour(_,_):- joueurCourant(Player),assert(winner(Player)).
+%%cas ou le khan n'est pas encore en jeu
+getPossibles(Res,false):-khan(0,0), joueurCourant(Player),getPiecesJoueur(Res1,Player), casesJouables(Res1,Res).
+%%cas ou des pions peuvent obéir au khan
+getPossibles(Res,false):-joueurCourant(Player),getPiecesJoueur(Pions,Player), pionsSurTypeKhanJouables(Pions,Res).
+%%cas ou aucun pion ne peut obéir au khan et peut jouer des pions
+getPossibles(Res,true):- joueurCourant(Player), getPiecesJoueur(Res1, Player), casesJouables(Res1,Res), pionsAPlacer(Player).
+%%cas ou aucun pion ne peut obéir au khan et ne peut aps jouer de pions
+getPossibles(Res,false):- joueurCourant(Player), not(pionsAPlacer(Player)), getPiecesJoueur(Res1, Player), casesJouables(Res1,Res).
+
+checkPion(1,_,_):-write("Ou voulez vous le poser?"), read(Pos), nl,posePion(Pos).
+checkPion(Pion,Pions,Pion):-member(Pion,Pions).
+checkPion(_,_,_):-write("------------Piece invalide----------"), nl,tourHumain.
+
+%soit on arrive sur une case libre
+checkMange(Case):- parse(Case,X,Y), estLibre(X,Y).
+%soit sur une case occupee par un sbire ocre
+checkMange(Case):- parse(Case,X,Y), sbireO(X,Y), retract(sbireO(X,Y)). 
+%soit sur une case occupee par un sbire rouge
+checkMange(Case):- parse(Case,X,Y), sbireR(X,Y), retract(sbireR(X,Y)). 
+%sinon c'est qu'une kalista a été mangée
+checkMange(_).
+
+
+
+endTurn:-changementJoueur, joueurCourant(X), checkTypeJoueur(X).
+checkTypeJoueur(rouge):-jRouge(Type), affichePlateau, tourSuivant(Type).
+checkTypeJoueur(ocre):-jOcre(Type), affichePlateau, tourSuivant(Type).
+
+%predicat permettant de passer au joueur suivant, s'arrête si un gagnant est détecté
+tourSuivant(_):-winner(X), write("----------Le joueur "), write(X), write(" gagne la partie!!-----------"),!. 
 tourSuivant(humain):-tourHumain.
 tourSuivant(ordi):-tourOrdi.
 
-tourOrdi:- joueurCourant(Player), possibilitesJoueur(ListePions,ListePos,Player), genereMouvement(ListePos), changeJoueur(Player), checkTypeJoueur(Player).
+%% tourOrdi. %%:- joueurCourant(Player), possibilitesJoueur(_,ListePos,Player), genereMouvement(ListePos), changeJoueur(Player), checkTypeJoueur(Player).
 
-%%rouge joue et le khan n'est pas encore en jeu
-possibilitesJoueur(Pion, rouge, out):- getAllPiecesR(Pions), parseListe(Pions,ResL),proposeCoupsSansKhan(ResL,Pion).
-%%rouge joue et le khan et en jeu mais il ne peut pas jouer de pions 
-possibilitesJoueur(Pion, rouge, _):- getAllPiecesR(Pions), not(pionsSurTypeKhan(Pions,Res)), parseListe(Pions,ResL),proposeCoupsSansKhan(ResL,Pion).
-%%rouge joue, le khan est en jeu, et le joueur a des pions sur des cases du même type que le khan
-possibilitesJoueur(Pion, rouge, _):- getAllPiecesR(Pions), pionsSurTypeKhan(Pions,Res), calculeNbMouvements(Pions,Acc,N), N > 0, proposeCoups(Res,Pion),!.
-%rouge joue, le khan est en jeu, le joueur a des pions sur des cases du même type que le khan mais ces pions ne peuvent pas bouger
-possibilitesJoueur(Pion, rouge, _):- getAllPiecesR(Pions), pionsSurTypeKhan(Pions,Res), calculeNbMouvements(Pions,Acc,N), N = 0, parseListe(Pions,ResL), proposeCoupsSansKhan(ResL,Pion),!.
-%%ocre joue et le khan et en jeu mais il ne peut pas jouer de pions 
-possibilitesJoueur(Pion, ocre, _):- getAllPiecesO(Pions), not(pionsSurTypeKhan(Pions,Res)), parseListe(Pions,ResL),proposeCoupsSansKhan(ResL,Pion).
-%%ocre joue, le khan est en jeu, et le joueur a des pions sur des cases du même type que le khan
-possibilitesJoueur(Pion, ocre, _):- getAllPiecesO(Pions), pionsSurTypeKhan(Pions,Res), calculeNbMouvements(Pions,Acc,N), N > 0, proposeCoups(Res,Pion),!.
-%ocre joue, le khan est en jeu, le joueur a des pions sur des cases du même type que le khan mais ces pions ne peuvent pas bouger
-possibilitesJoueur(Pion, rouge, _):- getAllPiecesO(Pions), pionsSurTypeKhan(Pions,Res), calculeNbMouvements(Pions,Acc,N), N = 0, parseListe(Pions,ResL), proposeCoupsSansKhan(ResL,Pion),!.
-
-%%cas ou le joueur peut jouer un pion sur une case du type du khan
-proposeCoups(ListePions,Pion):- write('Quelle piece voulez vous jouer parmi les pieces suivants?'),nl,
-						write(ListePions),nl, 
-						read(Pion),checkPion(ListePions,Pion,khanTrue),nl.
-
-%%cas ou le joueur peut jouer des pions mais pas en poser
-proposeCoupsSansKhan(ListePions,Pion):-joueurCourant(Player), not(pionsAPlacer(Player)),
-									write('Quel piece voulez vous jouer parmi les pieces suivants?'),nl,
-									write(ListePions),nl, 
-									read(Pion), checkPion(ListePions,Pion,khanFalse),nl.
-
-%%cas ou le joueur peut jouer des pions et en poser
-proposeCoupsSansKhan(ListePions,Pion):-joueurCourant(Player), pionsAPlacer(Player), calculeNbMouvements(ListePions,Acc,N), N > 0,
-									write("Quelle piece voulez vous jouer parmi les pieces suivants?Vous pouvez également poser un piece sur une case libre (Entrez 1)"),nl,
-									write(ListePions),nl, 
-									read(Pion), not(Pion = 1),checkPion(ListePions,Pion,khanFalse),nl.
-
-proposeCoupsSansKhan(ListePions,Pion):-joueurCourant(Player), pionsAPlacer(Player), calculeNbMouvements(ListePions,Acc,N), N > 0,
-									write("Quelle piece voulez vous jouer parmi les pieces suivants?Vous pouvez également poser un piece sur une case libre (Entrez 1)"),nl,
-									write(ListePions),nl, 
-									read(Pion),Pion = 1, write("ou voulez vous le poser?:"), read(Pos),nl, posePion(Pos,ListePions).
-
-%%cas ou le joueur peut poser des pions mais pas en jouer
-proposeCoupsSansKhan(ListePions,Pion):-joueurCourant(Player), pionsAPlacer(Player), calculeNbMouvements(ListePions,Acc,N), N = 0,
-									write("Vous pouvez placer un piece  sur une case libre"),nl,
-									read(Pos), posePion(Pos,ListePions).
-
-%%Permet de vérifier qu'un pion entré est autorisé
-checkPion(ListePions,Pion,khanTrue):-member(Pion,ListePions).
-checkPion(ListePions,Pion,khanTrue):-not(member(Pion,ListePions)), write("Piece non autorisee"), proposeCoups(ListePions,Pion).
-checkPion(ListePions,Pion,khanFalse):-member(Pion,ListePions).
-checkPion(ListePions,Pion,khanFalse):-not(member(Pion,ListePions)), write("Piece non autorisee"), proposeCoupsSansKhan(ListePions,Pion).
 
 %permet de poser un pion et de terminer le tour
-posePion(Pos,ListePions):-parse(Pos,X,Y),estLibre(X,Y),joueurCourant(Player), posePionService(Player,X,Y), setKhan(Pos), changementJoueur,endTurn.
-posePion(Pos,ListePions):-parse(Pos,X,Y),not(estLibre(X,Y)), write("case occupee"), nl, proposeCoupsSansKhan(ListePions,Pion).
-posePionService(rouge,X,Y):-assert(sbireR(X,Y)).
-posePionService(ocre,X,Y):-assert(sbireO(X,Y)).
+posePion(Pos):-parse(Pos,X,Y),estLibre(X,Y),caseTypeKhan(Pos),joueurCourant(Player), posePionService(Player,X,Y), setKhan(Pos),endTurn,!.
+posePion(Pos):-parse(Pos,X,Y),estLibre(X,Y),not(caseTypeKhan(Pos)), write("la case doit etre du type du khan"), nl, checkPion(1,_,_).
+posePion(Pos):-parse(Pos,X,Y),not(estLibre(X,Y)), write("case occupee"), nl, checkPion(1,_,_).
 

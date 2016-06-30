@@ -19,12 +19,13 @@
 	/*Random pions*/
 
 /*Fonction d'init*/
-init:- resetPions, write('Joueur 1 humain(entrer 1) ou ordi(entrer 2)'),read(Player1),nl, write('Joueur 2 humain(entrer 1) ou ordi(entrer 2)'), read(Player2),nl, initRouge(Player1), initOcre(Player2).
-initRouge(1) :- assert(jRouge(humain)), choixCoteHumain, placeKalistaRougeHumain, placePionsRougeHumain(6).
-initOcre(1) :- assert(jOcre(humain)), placeKalistaOcreHumain, placePionsOcreHumain(6).
+init:- resetPions, retractall(winner(_)), retractall(jRouge(_)), retractall(jOcre(_)),setPlateauBas, affichePlateau, write('Joueur 1 humain(entrer 1) ou ordi(entrer 2)'),read(Player1),nl, write('Joueur 2 humain(entrer 1) ou ordi(entrer 2)'), read(Player2),nl, initRouge(Player1), initOcre(Player2).
+initRouge(1) :- assert(jRouge(humain)), choixCoteHumain, placeKalistaRougeHumain, placePionsRougeHumain(5).
 initRouge(2) :- assert(jRouge(ordi)), choixCoteOrdi,placementOrdiRouge.
-initOcre(2) :- assert(jOcre(ordi)), placementOrdiOcre.
 initRouge(_) :- write('joueur 1: entrez 1 pour humain ou 2 pour ordi'), read(Player1), nl, initRouge(Player1).
+
+initOcre(1) :- assert(jOcre(humain)), placeKalistaOcreHumain, placePionsOcreHumain(5).
+initOcre(2) :- assert(jOcre(ordi)), placementOrdiOcre.
 initOcre(_) :- write('joueur 2: entrez 1 pour humain ou 2 pour ordi'), read(Player2), nl, initRouge(Player2).
 
 /*test si les coordonnées entrées sont valides pour une initialisation*/
@@ -32,7 +33,7 @@ estOkInitRouge(X,Y):- estLibre(X,Y), estSurTerrain(X,Y), Y < 3.
 estOkInitOcre(X,Y):- estLibre(X,Y), estSurTerrain(X,Y), Y > 4.
 
 /*On change le plateau en fonction du côté que le joueur Rouge veut avoir en face de soit*/
-choixCoteHumain:-write('Quel coté voulez vous choisir? (Entrer haut, bas, gauche ou droite'), read(Side), nl, setPlateau(Side).
+choixCoteHumain:-write('Quel cote voulez vous choisir? (Entrer haut, bas, gauche ou droite'), read(Side), nl, setPlateau(Side), affichePlateau.
 setPlateau(droite):-setPlateauDroite.
 setPlateau(gauche):-setPlateauGauche.
 setPlateau(bas):-setPlateauBas.
@@ -47,14 +48,14 @@ genereCote(3, haut).
 genereCote(4, bas).
 
 /*On lit une coordonnée sous la forme [a-z]\d et on la parse pour récupérer la posX et posY pour la Kalista.*/
-placeKalistaRougeHumain:-write('J1, ou voulez vous poser votre Kalista? Entrer une coordonnee de type a4'), read(Pos), nl, parse(Pos,X,Y), testKalistaRougeHumain(X, Y).
+placeKalistaRougeHumain:-write('J1, ou voulez vous poser votre Kalista? Entrer une coordonnee parmi les suivantes'),nl,positionsPossiblesRouge(X),write(X),nl, read(Pos), nl, parse(Pos,X,Y), testKalistaRougeHumain(X, Y).
 /*permet de vérifier que les coordonnées pour la kalista rouge sont valides*/
-testKalistaRougeHumain(X, Y) :- estOkInitRouge(X,Y),!,assert(kalistaR(X,Y)).
+testKalistaRougeHumain(X, Y) :- estOkInitRouge(X,Y),!,assert(kalistaR(X,Y)), affichePlateau.
 testKalistaRougeHumain(X, Y) :- not(estOkInitRouge(X, Y)), write('Entrez une coordonnee valide merci'), nl, placeKalistaRougeHumain.
 
 /*On procède de même pour la Kalista Ocre*/
-placeKalistaOcreHumain:-write('J2, ou voulez vous poser votre Kalista? Entrer une coordonnee de type a4'), read(Pos), nl, parse(Pos,X,Y), testKalistaOcreHumain(X, Y).
-testKalistaOcreHumain(X, Y) :- estOkInitOcre(X,Y),!,assert(kalistaO(X,Y)).
+placeKalistaOcreHumain:-write('J2, ou voulez vous poser votre Kalista? Entrer une coordonnee parmi les suivantes'),nl,positionsPossiblesOcre(X),write(X),nl, read(Pos), nl, parse(Pos,X,Y), testKalistaOcreHumain(X, Y).
+testKalistaOcreHumain(X, Y) :- estOkInitOcre(X,Y),!,assert(kalistaO(X,Y)), affichePlateau.
 testKalistaOcreHumain(X, Y) :- not(estOkInitOcre(X, Y)), write('Entrez une coordonnee valide merci'), nl, placeKalistaOcreHumain.
 
 /*On sélectionne aléatoirement un emplacement dans la liste des possibles pour la kalista rouge, on la pose, puis on retire la position dans la liste des possibles*/
@@ -64,19 +65,19 @@ placeKalistaOcreOrdi(Liste):- positionsPossiblesOcre(X), length(X,N), N1 is N + 
 
 /*Permet à un humain joueur 1 de placer ses pions*/
 placePionsRougeHumain(0).
-placePionsRougeHumain(N):- write('Placer un pion (entrer une coordonnee de type a4'), read(Pos), parse(Pos,X,Y), testPionsRougeHumain(X,Y,N).
-testPionsRougeHumain(X,Y,N):- estOkInitRouge(X,Y), !,assert(sbireR(X,Y)), N1 is N-1, placePionsRougeHumain(N1).
+placePionsRougeHumain(N):- write('Placer un pion (entrer une coordonnee parmi les suivantes'),nl,positionsPossiblesRouge(X),write(X),nl, read(Pos), parse(Pos,X,Y), testPionsRougeHumain(X,Y,N).
+testPionsRougeHumain(X,Y,N):- estOkInitRouge(X,Y), !,assert(sbireR(X,Y)), N1 is N-1, affichePlateau,placePionsRougeHumain(N1).
 testPionsRougeHumain(X,Y,N):- not(estOkInitRouge(X,Y)), write('Entrez une coordonnee valide merci'), nl, placePionsRougeHumain(N).
 
 /*Permet à un humain joueur 2 de placer ses pions*/
 placePionsOcreHumain(0).
-placePionsOcreHumain(N):- write('Placer un pion (entrer une coordonnee de type a4'), read(Pos), parse(Pos,X,Y), testPionsOcreHumain(X,Y,N).
-testPionsOcreHumain(X,Y,N):- estOkInitOcre(X,Y), !,assert(sbireO(X,Y)), N1 is N-1, placePionsOcreHumain(N1).
+placePionsOcreHumain(N):- write('Placer un pion (entrer une coordonnee parmi les suivantes'),nl,positionsPossiblesOcre(X),write(X),nl, read(Pos), parse(Pos,X,Y), testPionsOcreHumain(X,Y,N).
+testPionsOcreHumain(X,Y,N):- estOkInitOcre(X,Y), !,assert(sbireO(X,Y)), N1 is N-1, affichePlateau,placePionsOcreHumain(N1).
 testPionsOcreHumain(X,Y,N):- not(estOkInitOcre(X,Y)), write('Entrez une coordonnee valide merci'), nl, placePionsOcreHumain(N).
 
 /*place les pions et les kalists des ordis rouges et noirs, le placement de la kalista passe au placement des pions la liste des positions privée de sa position.*/
-placementOrdiRouge:- placeKalistaRougeOrdi(Positions), placePionsRougeOrdi(Positions,6).
-placementOrdiOcre:- placeKalistaOcreOrdi(Positions), placePionsOcreOrdi(Positions,6).
+placementOrdiRouge:- placeKalistaRougeOrdi(Positions), placePionsRougeOrdi(Positions,5), affichePlateau.
+placementOrdiOcre:- placeKalistaOcreOrdi(Positions), placePionsOcreOrdi(Positions,5), affichePlateau.
 
 /*Placement automatique des pions ordis Rouge*/
 placePionsRougeOrdi(_,0).

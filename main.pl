@@ -1,8 +1,7 @@
 :- consult("init").
-:-consult("service").
-:- consult("moves").
 :-consult("tour").
 :-consult("affichage").
+:-consult("IA").
 
 %plateau
 :-dynamic plateau/1.
@@ -22,9 +21,19 @@
 :-dynamic jRouge/1.
 %joueurOcre
 :-dynamic jOcre/1.
+%gagnant
+:-dynamic winner/1.
+%simulation sbires rouges
+:-dynamic sbireOSave/2.
+%simulation sbires ocre
+:-dynamic sbireOSave/2.
+%simulation kalistaO
+:-dynamic kalistaOSave/2.
+%simulation kalistaR
+:-dynamic kalistaRSave/2.
+%simulation khan
+:-dynamic khanSave/2.
 
 
 
 start:-init,assert(joueurCourant(rouge)), jRouge(Type), tourSuivant(Type).
-
-jouer.
